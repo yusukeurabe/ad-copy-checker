@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ad Copy Checker</title>
+  <meta name="description" content="Check character limits, formatting rules, and risky expressions for each ad platform before you submit.">
+  <script>
+    // 画面がちらつかないよう、描画前に保存済みのテーマと言語を反映する（既定はダーク・英語）
+    (function () {
+      var theme = "dark", lang = "en";
+      try {
+        theme = localStorage.getItem("ad-copy-checker:theme") || theme;
+        lang = localStorage.getItem("ad-copy-checker:lang") || lang;
+      } catch (e) {}
+      document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");
+      document.documentElement.setAttribute("lang", lang === "ja" ? "ja" : "en");
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="wrap header-inner">
+      <div>
+        <h1 data-i18n="title">Ad Copy Checker</h1>
+        <p class="lead" data-i18n="lead"></p>
+      </div>
+      <div class="prefs">
+        <div class="seg" role="group" id="langSwitch" data-i18n-aria="langLabel">
+          <button type="button" data-lang="en">EN</button>
+          <button type="button" data-lang="ja">日本語</button>
+        </div>
+        <button type="button" class="btn theme-btn" id="themeBtn" data-i18n-aria="themeLabel">
+          <span class="theme-icon" aria-hidden="true"></span><span id="themeText"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <nav class="media-tabs" id="mediaTabs" role="tablist" data-i18n-aria="mediaNav"></nav>
+
+    <div class="toolbar" id="toolbar">
+      <div class="summary" id="summary" aria-live="polite"></div>
+      <div class="actions">
+        <button type="button" id="btnSample" class="btn ghost" data-i18n="sample"></button>
+        <button type="button" id="btnCopy" class="btn" data-i18n="copy"></button>
+        <button type="button" id="btnCsv" class="btn" data-i18n="csv"></button>
+      </div>
+    </div>
+
+    <div id="fields"></div>
+
+    <footer class="foot-note">
+      <p data-i18n="footer1"></p>
+      <p data-i18n-html="footer2"></p>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="i18n.js"></script>
+  <script src="rules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
