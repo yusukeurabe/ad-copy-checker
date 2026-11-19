@@ -85,7 +85,10 @@
     emoji: /(?![©®™])\p{Extended_Pictographic}️?/gu,
     dependentChars: /[①-⓿Ⅰ-ⅿ❶-➓㈠-㉏㊀-㏿№℡]/g,
     halfKana: /[｡-ﾟ]+/g,
-    decorativeSymbols: /[★☆♪♫♬♥♡❤◆◇■□●○◎▲△▼▽→←↑↓⇒⇔◀▶]/g,
+    // 装飾目的の記号：矢印・罫線・図形・その他の記号・装飾記号のブロック全体と ≫ » 〓。
+    // 絵文字（emoji）と丸付き数字（dependentChars）は別のチェックで拾うので除外する。
+    decorativeSymbols:
+      /(?!\p{Extended_Pictographic})[←-⇿─-❵➔-➿⟰-⟿⤀-⥿⬀-⯿≫»〓]/gu,
     repeatedSymbols: /([!！?？。、・〜～~=＝*＊#＃♪★☆])\1+/g,
     phone: /0120-?\d{3}-?\d{3}|0\d{1,4}[-‐ー]\d{1,4}[-‐ー]\d{3,4}|0\d{9,10}/g,
     allCaps: /\b[A-Z]{4,}\b/g,
