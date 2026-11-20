@@ -143,6 +143,9 @@
       if (field.soft) add("warn", T.overSoft[0], T.overSoft[1](field.limit, over));
       else add("error", T.overHard[0], T.overHard[1](over, media.countMode === "width"));
     }
+    if (field.minLength && count < field.minLength) {
+      add("warn", T.underMin[0], T.underMin[1](field.minLength, media.countMode === "width"));
+    }
 
     // 感嘆符
     const exLimit = c.exclamation ? c.exclamation[field.key] : undefined;
@@ -165,9 +168,19 @@
       }
     }
 
+    // 絵文字の個数制限（{ 項目キー: 上限数 } で書かれた媒体のみ）
+    const emojiByField = c.emoji && typeof c.emoji === "object";
+    if (emojiByField) {
+      const lim = c.emoji[field.key];
+      const em = findAll(RE.emoji, text);
+      if (lim !== undefined && lim !== null && em.length > lim) {
+        add("error", T.emojiLimit[0], T.emojiLimit[1](label, lim, em.length), em, em.map(([s, e]) => text.slice(s, e)));
+      }
+    }
+
     // 表記ルール
     for (const key of ["emoji", "dependentChars", "halfKana", "decorativeSymbols", "repeatedSymbols", "allCaps"]) {
-      if (!c[key]) continue;
+      if (!c[key] || (key === "emoji" && emojiByField)) continue;
       const spans = findAll(RE[key], text);
       if (spans.length) add(c[key], T[key][0], T[key][1], spans, spans.map(([s, e]) => text.slice(s, e)));
     }
@@ -249,6 +262,13 @@
     }
     if (field.minItems && rows.length > 0 && rows.length < field.minItems) {
       notices.push({ level: "info", text: T.tooFew(label, field.minItems, rows.length) });
+    }
+    // 「○文字以下を1つ以上」の条件
+    if (field.needShort && rows.length > 0) {
+      const { limit, level } = field.needShort;
+      if (!rows.some((r) => measure(r.text, media.countMode, limit).count <= limit)) {
+        notices.push({ level, text: T.needShort(label, limit, media.countMode === "width") });
+      }
     }
     return { rows, notices };
   }
