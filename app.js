@@ -89,7 +89,15 @@
     // 絵文字（emoji）と丸付き数字（dependentChars）は別のチェックで拾うので除外する。
     decorativeSymbols:
       /(?!\p{Extended_Pictographic})[←-⇿─-❵➔-➿⟰-⟿⤀-⥿⬀-⯿≫»〓]/gu,
-    repeatedSymbols: /([!！?？。、・〜～~=＝*＊#＃♪★☆（）()])\1+/g,
+    // 同じ記号の繰り返し（花束！！）と、！？ のような感嘆符・疑問符の組み合わせ
+    repeatedSymbols: /([!！?？。、・〜～~=＝*＊#＃♪★☆（）()])\1+|[!！?？]*(?:[!！][?？]|[?？][!！])[!！?？]*/g,
+    // 文字の代わりに記号や数字を使う（f1owers、fl@wers）
+    symbolSubstitution: /[A-Za-z]+(?:[@$]|[013457](?=[A-Za-z]{2}))[A-Za-z@$0-9]*/g,
+    // 1文字ずつ記号や空白で区切る（は。な。た。ば。、*花*束*、セ ー ル）
+    separatorGimmick:
+      /(?<![^\s。、・.．*＊\-－])[^\s。、・.．*＊\-－]([\s。、・.．*＊\-－])[^\s。、・.．*＊\-－](?:\1[^\s。、・.．*＊\-－])+(?![^\s。、・.．*＊\-－])|([。、・.．*＊\-－])[^\s。、・.．*＊\-－]\2[^\s。、・.．*＊\-－]\2/gu,
+    // 上付き文字（²、ᵀᴹ など）。m² m³ のような単位は除く
+    superscript: /(?<!m)[²³]|[¹⁰-₟ᴬ-ᵪ]/gu,
     phone: /0120-?\d{3}-?\d{3}|0\d{1,4}[-‐ー]\d{1,4}[-‐ー]\d{3,4}|0\d{9,10}/g,
     allCaps: /\b[A-Z]{4,}\b/g,
     edgeSpace: /^[ 　\t]+|[ 　\t]+$/g,
@@ -254,7 +262,10 @@
     }
 
     // 表記ルール
-    for (const key of ["emoji", "dependentChars", "halfKana", "decorativeSymbols", "repeatedSymbols", "allCaps"]) {
+    for (const key of [
+      "emoji", "dependentChars", "halfKana", "decorativeSymbols", "repeatedSymbols",
+      "symbolSubstitution", "separatorGimmick", "superscript", "allCaps",
+    ]) {
       if (!c[key] || (key === "emoji" && emojiByField)) continue;
       const spans = findAll(RE[key], text);
       if (spans.length) add(c[key], T[key][0], T[key][1], spans, spans.map(([s, e]) => text.slice(s, e)));
