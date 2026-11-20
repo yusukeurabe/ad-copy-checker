@@ -8,7 +8,7 @@ Check ad copy against each platform's character limits, formatting rules, and ri
 
 - **Platforms / 対応媒体:** Google Search (RSA), Yahoo! Search (RSA), Google Display (RDA), Meta, LINE Ads
 - **Character count / 文字数:** full-width = 2 / half-width = 1 counting for Google & Yahoo!, plain counting for Meta & LINE. The part over the limit is marked.
-- **Formatting rules / 表記ルール:** exclamation marks, emoji, platform-dependent characters, half-width kana, decorative or repeated symbols, phone numbers, all caps, extra spaces
+- **Formatting rules / 表記ルール:** exclamation marks, bracket pairs (Yahoo! Search), emoji, platform-dependent characters, half-width kana, decorative or repeated symbols, phone numbers, all caps, extra spaces
 - **Risky expressions / 注意表現:** superlatives & No.1 claims, guarantees, health/efficacy claims (PMD Act), price/time-limited offers, click bait
 - **Item checks / 個数チェック:** duplicates, too many / too few items
 - **Clean up / 整形:** full-width letters & numbers → half-width, half-width kana → full-width, remove extra spaces

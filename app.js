@@ -89,13 +89,44 @@
     // 絵文字（emoji）と丸付き数字（dependentChars）は別のチェックで拾うので除外する。
     decorativeSymbols:
       /(?!\p{Extended_Pictographic})[←-⇿─-❵➔-➿⟰-⟿⤀-⥿⬀-⯿≫»〓]/gu,
-    repeatedSymbols: /([!！?？。、・〜～~=＝*＊#＃♪★☆])\1+/g,
+    repeatedSymbols: /([!！?？。、・〜～~=＝*＊#＃♪★☆（）()])\1+/g,
     phone: /0120-?\d{3}-?\d{3}|0\d{1,4}[-‐ー]\d{1,4}[-‐ー]\d{3,4}|0\d{9,10}/g,
     allCaps: /\b[A-Z]{4,}\b/g,
     edgeSpace: /^[ 　\t]+|[ 　\t]+$/g,
     multiSpace: /[ 　]{2,}/g,
     fullwidthAlnum: /[０-９Ａ-Ｚａ-ｚ]+/g,
   };
+
+  // 括弧の対応を調べる。
+  // ・「」【】などは同じ種類の開き・閉じで1組。片方だけ・種類違い・逆向きは bad に入れる。
+  // ・丸括弧（）() は片方だけでもよく、組数にも数えない。全角と半角の組み合わせだけ bad。
+  const BRACKETS = { "「": "」", "『": "』", "【": "】", "〈": "〉", "《": "》", "〔": "〕", "［": "］", "[": "]", "｛": "｝", "{": "}", "＜": "＞", "<": ">" };
+  const CLOSERS = new Set(Object.values(BRACKETS));
+  const PARENS = { "（": "）", "(": ")" };
+
+  function checkBrackets(text) {
+    const pairs = [];
+    const bad = [];
+    const stack = [];
+    const parens = [];
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (BRACKETS[ch]) {
+        stack.push(i);
+      } else if (CLOSERS.has(ch)) {
+        const top = stack[stack.length - 1];
+        if (top !== undefined && BRACKETS[text[top]] === ch) pairs.push([stack.pop(), i]);
+        else bad.push([i, i + 1]);
+      } else if (PARENS[ch]) {
+        parens.push(i);
+      } else if (ch === "）" || ch === ")") {
+        const top = parens.pop();
+        if (top !== undefined && PARENS[text[top]] !== ch) bad.push([top, top + 1], [i, i + 1]);
+      }
+    }
+    for (const i of stack) bad.push([i, i + 1]);
+    return { pairs, bad };
+  }
 
   function checkLine(text, field, mediaKey, media) {
     const T = t().issues;
@@ -118,6 +149,20 @@
     if (exLimit !== undefined && exLimit !== null) {
       const ex = findAll(RE.exclamation, text);
       if (ex.length > exLimit) add("error", T.exclamation[0], T.exclamation[1](label, exLimit, ex.length), ex);
+    }
+
+    // 括弧（対応と組数）
+    const brLimit = c.brackets ? c.brackets[field.key] : undefined;
+    if (brLimit !== undefined && brLimit !== null) {
+      const { pairs, bad } = checkBrackets(text);
+      if (bad.length) {
+        add("error", T.bracketUnpaired[0], T.bracketUnpaired[1], bad, [...new Set(bad.map(([s]) => text[s]))]);
+      }
+      if (pairs.length > brLimit) {
+        const spans = pairs.flatMap(([o, cl]) => [[o, o + 1], [cl, cl + 1]]);
+        const words = [...new Set(pairs.map(([o, cl]) => text[o] + text[cl]))];
+        add("error", T.bracketPairs[0], T.bracketPairs[1](label, brLimit, pairs.length), spans, words);
+      }
     }
 
     // 表記ルール
