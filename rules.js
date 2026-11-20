@@ -109,12 +109,15 @@ window.AD_RULES = {
         exclamation: null,
         // 「」【】などは項目ごとに1組まで、対になっていないとエラー（丸括弧は対象外）
         brackets: { headline: 1, description: 1 },
+        // 使える記号・種別ごとの個数・連続（一覧は下の symbolTypes.yahoo_search）
+        symbolTypes: { headline: "error", description: "error" },
         emoji: "error",
         dependentChars: "error",
         halfKana: "error",
-        decorativeSymbols: "error",
-        // 同じ種類の記号の連続は入稿不可
-        repeatedSymbols: "error",
+        // ★♪→ などは symbolTypes の「使えない記号」で拾う
+        decorativeSymbols: null,
+        // 記号の連続は symbolTypes で拾う
+        repeatedSymbols: null,
         phone: "warn",
         allCaps: "info",
         fullwidthAlnum: true,
@@ -135,13 +138,16 @@ window.AD_RULES = {
         exclamation: null,
         // アセット入稿タイプはタイトル・説明文それぞれ1組まで
         brackets: { headline: 1, description: 1 },
+        // 使える記号・絵文字・種別ごとの個数・連続（一覧は下の symbolTypes.yda / emojiAllow.yda）
+        symbolTypes: { headline: "error", description: "error" },
         // 絵文字はタイトルのみ2つまで
         emoji: { headline: 2, description: 0, business_name: 0 },
         dependentChars: "error",
         halfKana: "error",
-        // ★♪→■ などはディスプレイ広告では使える記号
+        // ★♪→■ などはディスプレイ広告では使える記号（ただし「その他」「矢印」として個数制限あり）
         decorativeSymbols: null,
-        repeatedSymbols: "error",
+        // 記号の連続は symbolTypes で拾う
+        repeatedSymbols: null,
         phone: "warn",
         allCaps: "info",
         fullwidthAlnum: false,
@@ -198,6 +204,76 @@ window.AD_RULES = {
         fullwidthAlnum: true,
       },
     },
+  },
+
+  // 使える記号と記号の種別（checks.symbolTypes を設定した媒体で使います）
+  // ・一覧にない記号は「使えない記号」になります（全角スペースも不可）。
+  // ・同じ種別の記号は1項目（タイトル1本・説明文1本）内で limit 個まで。省略時は2、null は無制限。
+  // ・同じ種別の記号は続けて使えません（間に半角スペースがあっても連続扱い）。
+  // ・bracket: true の種別は個数・対応を括弧のチェック（checks.brackets）で見ます。
+  // 出典：LINEヤフー広告ヘルプ「レスポンシブ検索広告」(H000044241)、
+  //       「使用可能な文字種別、スペース、記号種別、絵文字」(H000044294)、
+  //       「文字、記号を使用する際のルール」(H000044192)
+  symbolTypes: {
+    yahoo_search: [
+      { name: { en: "Brackets", ja: "括弧" }, chars: "（）【】『』「」［］＜＞《》≪≫()[]", bracket: true },
+      { name: { en: "Quotes", ja: "引用符" }, chars: "‘’｀´“”'" },
+      { name: { en: "Japanese punctuation", ja: "句読点" }, chars: "。、", limit: null },
+      { name: { en: "Middle dot", ja: "中点" }, chars: "・", limit: null },
+      { name: { en: "Comma", ja: "カンマ" }, chars: "，,", limit: null },
+      { name: { en: "Period", ja: "ピリオド" }, chars: "．.", limit: null },
+      { name: { en: "Wave dash / tilde", ja: "波形" }, chars: "〜～" },
+      { name: { en: "Percent", ja: "パーセント" }, chars: "％%" },
+      { name: { en: "Ampersand", ja: "アンパサンド" }, chars: "＆&" },
+      { name: { en: "Colon / semicolon", ja: "コロン・セミコロン" }, chars: "：；:;" },
+      { name: { en: "Ellipsis", ja: "三点リーダー" }, chars: "…" },
+      { name: { en: "Hyphen / equals", ja: "ハイフン・イコール" }, chars: "－＝-", limit: 3 },
+      { name: { en: "Math symbols", ja: "計算記号" }, chars: "＋±×÷≠∞+" },
+      { name: { en: "Slash", ja: "スラッシュ" }, chars: "／/" },
+      { name: { en: "Question / exclamation", ja: "疑問符・感嘆符" }, chars: "？！?!" },
+      { name: { en: "Other", ja: "その他" }, chars: "￥＠＃♯¥@#$™©®" },
+      {
+        name: { en: "Greek / Cyrillic", ja: "ギリシャ文字・キリル文字" },
+        chars: "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя",
+      },
+    ],
+    yda: [
+      { name: { en: "Brackets", ja: "括弧" }, chars: "（）［］「」『』｛｝＜＞≪≫《》【】〈〉〔〕()[]", bracket: true },
+      { name: { en: "Quotes", ja: "引用符" }, chars: "‘’｀´“”\"'" },
+      { name: { en: "Japanese punctuation", ja: "句読点" }, chars: "。、", limit: null },
+      { name: { en: "Middle dot", ja: "中点" }, chars: "・•", limit: null },
+      { name: { en: "Comma", ja: "カンマ" }, chars: "，,", limit: null },
+      { name: { en: "Period", ja: "ピリオド" }, chars: "．.", limit: null },
+      { name: { en: "Underscore", ja: "アンダーバー" }, chars: "＿_" },
+      { name: { en: "Wave dash / tilde", ja: "波形" }, chars: "〜～~" },
+      { name: { en: "Percent", ja: "パーセント" }, chars: "％%" },
+      { name: { en: "Ampersand", ja: "アンパサンド" }, chars: "＆&" },
+      { name: { en: "Colon / semicolon", ja: "コロン・セミコロン" }, chars: "：；:;" },
+      { name: { en: "Ellipsis", ja: "三点リーダー" }, chars: "…" },
+      { name: { en: "Hyphen / equals", ja: "ハイフン・イコール" }, chars: "－-―─＝", limit: 3 },
+      { name: { en: "Vertical bar", ja: "バーティカルバー" }, chars: "｜" },
+      { name: { en: "Math symbols", ja: "計算記号" }, chars: "＋±×÷≠∞+" },
+      { name: { en: "Slash", ja: "スラッシュ" }, chars: "／＼/" },
+      { name: { en: "Question / exclamation", ja: "疑問符・感嘆符" }, chars: "？！?!" },
+      { name: { en: "Arrows", ja: "矢印" }, chars: "⇒⇔→←↑↓⇐⇑⇓" },
+      {
+        name: { en: "Other", ja: "その他" },
+        chars: "￥＄＊＃♪＠〃〆※〒♯■□▲△▷►▼▽◆◇◎●◢◣◤◥★☆♡♢♤♧♩♫♬〓ヽヾ@#$‥⌷¥○〇™©®",
+      },
+      {
+        name: { en: "Greek / Cyrillic", ja: "ギリシャ文字・キリル文字" },
+        chars: "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя",
+      },
+    ],
+  },
+
+  // 使える絵文字の一覧（ここにある媒体では、一覧にない絵文字を「使えない記号」にします）
+  emojiAllow: {
+    yda: `🏆 ✨ 🎁 🎉 🎊 🎄 🎍 🎀 🌸 💐 🌷 🌻 🍁 🍀 🌿 🌱 ☘️ 🍃 💎 👑 🛒 💡 💰 📣 📢
+      🔔 💪 👀 👍 👊 👌 ✌️ 👉 👆 ☝️ 👇 👈 👏 🙌 🙏 👩 👨 💃 💦 💯 💨 💫 💬 🤩 😍
+      😳 😭 😢 😂 🤣 😄 💖 ❤️ 💕 💓 💗 💛 💞 💙 ❣️ 💟 💝 💜 💚 🧡 🖤 ➡️ ⬆️ ⬇️ ⬅️
+      ▶️ ◀️ 🔺 🔻 ✅ ✔️ ❌ ☑️ ⭕ ❗ ‼️ ❓ ⁉️ ⚠️ 🚫 🏠 🏡 🔥 ⚡️ 🌟 🌈 ⭐️ ❄️ 🌞 ☀️
+      🌊 💧 ⛄ ☔️ ☁️ ⏰ 🚗 🚨 🎈 📌 📍 🌹 🌺 💥 💋 💢 🔴 🔵`,
   },
 
   // 注意が必要な表現。全角・半角、大文字・小文字の違いは無視して照合します。
