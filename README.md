@@ -8,7 +8,7 @@ Check ad copy against each platform's character limits, formatting rules, and ri
 
 - **Platforms / 対応媒体:** Google Search (RSA), Performance Max, Demand Gen, Yahoo! Search (RSA), Yahoo! Display Ads (YDA, responsive asset type), Meta, Microsoft Ads (RSA)
 - **Character count / 文字数:** full-width = 2 / half-width = 1 counting for Google, Yahoo! Search and Microsoft; plain counting for YDA and Meta. The part over the limit is marked.
-- **Formatting rules / 表記ルール:** exclamation marks, bracket pairs (Yahoo! Search / YDA), emoji limits, "at least one short headline" (P-MAX / Demand Gen), emoji, platform-dependent characters, half-width kana, decorative or repeated symbols, phone numbers, all caps, extra spaces
+- **Formatting rules / 表記ルール:** exclamation marks, bracket pairs and Yahoo! symbol types (allowed symbols, max per type, no consecutive symbols; Yahoo! Search / YDA), emoji limits, "at least one short headline" (P-MAX / Demand Gen), emoji, platform-dependent characters, half-width kana, decorative or repeated symbols, phone numbers, all caps, extra spaces
 - **Risky expressions / 注意表現:** superlatives & No.1 claims, guarantees, health/efficacy claims (PMD Act), price/time-limited offers, click bait
 - **Item checks / 個数チェック:** duplicates, too many / too few items
 - **Clean up / 整形:** full-width letters & numbers → half-width, half-width kana → full-width, remove extra spaces

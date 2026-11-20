@@ -100,7 +100,7 @@
   // 括弧の対応を調べる。
   // ・「」【】などは同じ種類の開き・閉じで1組。片方だけ・種類違い・逆向きは bad に入れる。
   // ・丸括弧（）() は片方だけでもよく、組数にも数えない。全角と半角の組み合わせだけ bad。
-  const BRACKETS = { "「": "」", "『": "』", "【": "】", "〈": "〉", "《": "》", "〔": "〕", "［": "］", "[": "]", "｛": "｝", "{": "}", "＜": "＞", "<": ">" };
+  const BRACKETS = { "「": "」", "『": "』", "【": "】", "〈": "〉", "《": "》", "≪": "≫", "〔": "〕", "［": "］", "[": "]", "｛": "｝", "{": "}", "＜": "＞", "<": ">" };
   const CLOSERS = new Set(Object.values(BRACKETS));
   const PARENS = { "（": "）", "(": ")" };
 
@@ -126,6 +126,67 @@
     }
     for (const i of stack) bad.push([i, i + 1]);
     return { pairs, bad };
+  }
+
+  // 記号種別のルール（rules.js の symbolTypes に一覧がある媒体だけ）
+  // ・一覧にない記号は使えない（全角スペースも不可）
+  // ・同じ種別の記号は1項目内で limit 個まで（limit: null は無制限、括弧は括弧のチェックに任せる）
+  // ・同じ種別の記号の連続は不可（間に半角スペースがあっても連続とみなす）
+  const LETTER = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー0-9A-Za-z０-９Ａ-Ｚａ-ｚ]/u;
+  const PICTO = /(?![©®™])\p{Extended_Pictographic}/u; // ©®™ は記号として扱う
+  const DEPENDENT = new RegExp(RE.dependentChars.source);
+  const stripVS = (s) => s.replace(/[︎️]/g, "");
+  const symbolTables = {};
+
+  function symbolTable(mediaKey) {
+    if (!symbolTables[mediaKey]) {
+      const chars = new Map();
+      for (const type of R.symbolTypes[mediaKey]) {
+        for (const ch of type.chars.replace(/\s/g, "")) chars.set(ch, type);
+      }
+      const allow = R.emojiAllow && R.emojiAllow[mediaKey];
+      const emoji = allow ? new Set(allow.split(/\s+/).filter(Boolean).map(stripVS)) : null;
+      symbolTables[mediaKey] = { chars, emoji };
+    }
+    return symbolTables[mediaKey];
+  }
+
+  function checkSymbols(text, mediaKey) {
+    const { chars, emoji } = symbolTable(mediaKey);
+    const unsupported = [];
+    const runs = [];
+    const counts = new Map(); // type -> spans
+    let prev = null; // 直前の記号 { type, ch, s }
+    let i = 0;
+    for (const ch of text) {
+      const s = i;
+      const e = (i += ch.length);
+      if (ch === " ") continue; // 半角スペースは挟んでも連続扱い
+      // 文字・絵文字・機種依存文字・半角カナは記号ではない（絵文字などは別のチェックで見る）
+      if (LETTER.test(ch) && !/[｡-ﾟ]/.test(ch)) { prev = null; continue; }
+      if (PICTO.test(ch) || /[︎️‍｡-ﾟ]/.test(ch) || DEPENDENT.test(ch)) {
+        if (emoji && PICTO.test(ch) && !emoji.has(stripVS(ch))) unsupported.push([s, e]);
+        prev = null;
+        continue;
+      }
+      const type = chars.get(ch);
+      if (!type) { unsupported.push([s, e]); prev = null; continue; }
+      if (type.bracket) {
+        // 括弧は「（（」のような同じ丸括弧の連続だけここで見る
+        if (prev && prev.ch === ch && "（）()".includes(ch)) runs.push([prev.s, e]);
+      } else {
+        if (!counts.has(type)) counts.set(type, []);
+        counts.get(type).push([s, e]);
+        if (prev && prev.type === type) runs.push([prev.s, e]);
+      }
+      prev = { type, ch, s };
+    }
+    const over = [];
+    for (const [type, spans] of counts) {
+      const limit = type.limit === undefined ? 2 : type.limit;
+      if (limit !== null && spans.length > limit) over.push({ type, limit, spans });
+    }
+    return { unsupported, runs, over };
   }
 
   function checkLine(text, field, mediaKey, media) {
@@ -166,6 +227,20 @@
         const words = [...new Set(pairs.map(([o, cl]) => text[o] + text[cl]))];
         add("error", T.bracketPairs[0], T.bracketPairs[1](label, brLimit, pairs.length), spans, words);
       }
+    }
+
+    // 記号種別（使える記号・種別ごとの個数・連続）
+    const lv = c.symbolTypes && c.symbolTypes[field.key];
+    if (lv && R.symbolTypes[mediaKey]) {
+      const { unsupported, runs, over } = checkSymbols(text, mediaKey);
+      if (unsupported.length) {
+        add(lv, T.symbolUnsupported[0], T.symbolUnsupported[1], unsupported, [...new Set(unsupported.map(([s, e]) => text.slice(s, e)))]);
+      }
+      for (const o of over) {
+        add(lv, T.symbolOver[0], T.symbolOver[1](label, L(o.type.name), o.limit, o.spans.length), o.spans,
+          [...new Set(o.spans.map(([s, e]) => text.slice(s, e)))]);
+      }
+      if (runs.length) add(lv, T.symbolRun[0], T.symbolRun[1], runs, runs.map(([s, e]) => text.slice(s, e)));
     }
 
     // 絵文字の個数制限（{ 項目キー: 上限数 } で書かれた媒体のみ）
