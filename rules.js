@@ -9,6 +9,7 @@
 //     "char"  … 全角も半角も1文字で数える（Meta・LINE）
 // ・field.soft = true の項目は「推奨文字数」扱いで、超えても警告止まり。
 // ・checks の値は "error" | "warn" | "info" | null（null はチェックしない）
+//   exclamation / brackets だけは { 項目キー: 上限数 } で書き、超えたらエラー。
 // =============================================================
 window.AD_RULES = {
   media: {
@@ -45,6 +46,8 @@ window.AD_RULES = {
       ],
       checks: {
         exclamation: null,
+        // 「」【】などは項目ごとに1組まで、対になっていないとエラー（丸括弧は対象外）
+        brackets: { headline: 1, description: 1 },
         emoji: "error",
         dependentChars: "error",
         halfKana: "error",
