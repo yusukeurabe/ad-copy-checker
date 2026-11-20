@@ -5,11 +5,15 @@
 //   ここの数値や語句を更新してください。
 // ・表示名や説明は { en: 英語, ja: 日本語 } で書きます。
 // ・countMode
-//     "width" … 全角=2 / 半角=1 で数える（Google・Yahoo!）
-//     "char"  … 全角も半角も1文字で数える（Meta・LINE）
+//     "width" … 全角=2 / 半角=1 で数える（Google・Yahoo! 検索・Microsoft）
+//     "char"  … 全角も半角も1文字で数える（YDA・Meta）
 // ・field.soft = true の項目は「推奨文字数」扱いで、超えても警告止まり。
+// ・field.minLength … 1行あたりの推奨最小文字数。下回ると警告。
+// ・field.needShort … { limit, level }。limit 以下の行が1つもないと指摘する
+//   （例：P-MAX の「15文字以下の広告見出しを1つ以上」）。
 // ・checks の値は "error" | "warn" | "info" | null（null はチェックしない）
-//   exclamation / brackets だけは { 項目キー: 上限数 } で書き、超えたらエラー。
+//   exclamation / brackets は { 項目キー: 上限数 } で書き、超えたらエラー。
+//   emoji も { 項目キー: 上限数 } で書けます（YDA はタイトルのみ2つまで）。
 // =============================================================
 window.AD_RULES = {
   media: {
@@ -35,6 +39,63 @@ window.AD_RULES = {
       },
     },
 
+    pmax: {
+      label: { en: "Performance Max", ja: "P-MAX" },
+      sub: { en: "Asset group text", ja: "アセットグループのテキスト" },
+      countMode: "width",
+      fields: [
+        {
+          key: "headline", label: { en: "Headlines", ja: "広告見出し" }, limit: 30, minItems: 3, maxItems: 15,
+          needShort: { limit: 15, level: "error" },
+        },
+        { key: "long_headline", label: { en: "Long headlines", ja: "長い広告見出し" }, limit: 90, minItems: 1, maxItems: 5, minLength: 30 },
+        {
+          key: "description", label: { en: "Descriptions", ja: "説明文" }, limit: 90, minItems: 2, maxItems: 5,
+          // ヘルプには記載がなく、API のエラー（SHORT_DESCRIPTION_REQUIRED）にだけある条件なので警告
+          needShort: { limit: 60, level: "warn" },
+        },
+        { key: "business_name", label: { en: "Business name", ja: "ビジネスの名前" }, limit: 25, minItems: 1, maxItems: 1 },
+      ],
+      checks: {
+        exclamation: { headline: 0, long_headline: 0, description: 1, business_name: 0 },
+        emoji: "error",
+        dependentChars: "warn",
+        halfKana: "error",
+        decorativeSymbols: "error",
+        repeatedSymbols: "warn",
+        phone: "warn",
+        allCaps: "info",
+        fullwidthAlnum: true,
+      },
+    },
+
+    demand_gen: {
+      label: { en: "Demand Gen", ja: "デマンド ジェネレーション" },
+      sub: { en: "Image / video ads", ja: "画像・動画広告" },
+      countMode: "width",
+      fields: [
+        {
+          key: "headline", label: { en: "Headlines", ja: "広告見出し" }, limit: 40, minItems: 1, maxItems: 5,
+          // 30文字以下が1つもないと広告の有効性が「未完了」になり、ディスプレイ ネットワークに配信されない
+          needShort: { limit: 30, level: "error" },
+        },
+        { key: "long_headline", label: { en: "Long headlines (video ads)", ja: "長い広告見出し（動画広告）" }, limit: 90, maxItems: 5 },
+        { key: "description", label: { en: "Descriptions", ja: "説明文" }, limit: 90, minItems: 1, maxItems: 5 },
+        { key: "business_name", label: { en: "Business name", ja: "ビジネスの名前" }, limit: 25, minItems: 1, maxItems: 1 },
+      ],
+      checks: {
+        exclamation: { headline: 0, long_headline: 0, description: 1, business_name: 0 },
+        emoji: "error",
+        dependentChars: "warn",
+        halfKana: "error",
+        decorativeSymbols: "error",
+        repeatedSymbols: "warn",
+        phone: "warn",
+        allCaps: "info",
+        fullwidthAlnum: true,
+      },
+    },
+
     yahoo_search: {
       label: { en: "Yahoo! Search", ja: "Yahoo! 検索" },
       sub: { en: "Responsive search ads", ja: "レスポンシブ検索広告" },
@@ -52,32 +113,38 @@ window.AD_RULES = {
         dependentChars: "error",
         halfKana: "error",
         decorativeSymbols: "error",
-        repeatedSymbols: "warn",
+        // 同じ種類の記号の連続は入稿不可
+        repeatedSymbols: "error",
         phone: "warn",
         allCaps: "info",
         fullwidthAlnum: true,
       },
     },
 
-    google_display: {
-      label: { en: "Google Display", ja: "Google ディスプレイ" },
-      sub: { en: "Responsive display ads", ja: "レスポンシブ ディスプレイ広告" },
-      countMode: "width",
+    yda: {
+      label: { en: "Yahoo! Display (YDA)", ja: "YDA" },
+      sub: { en: "Responsive ads (assets)", ja: "レスポンシブ広告（アセット）" },
+      // ヘルプは「20文字以内」とだけ書いており、検索広告のような全角=2の記載がないため1文字ずつ数える
+      countMode: "char",
       fields: [
-        { key: "short_headline", label: { en: "Short headlines", ja: "広告見出し（短）" }, limit: 30, minItems: 1, maxItems: 5 },
-        { key: "long_headline", label: { en: "Long headline", ja: "長い広告見出し" }, limit: 90, minItems: 1, maxItems: 1 },
+        { key: "headline", label: { en: "Titles", ja: "タイトル" }, limit: 20, minItems: 1, maxItems: 5 },
         { key: "description", label: { en: "Descriptions", ja: "説明文" }, limit: 90, minItems: 1, maxItems: 5 },
+        { key: "business_name", label: { en: "Advertiser name", ja: "主体者表記" }, limit: 20, minItems: 1, maxItems: 1 },
       ],
       checks: {
         exclamation: null,
-        emoji: "error",
-        dependentChars: "warn",
-        halfKana: "warn",
-        decorativeSymbols: "error",
-        repeatedSymbols: "warn",
+        // アセット入稿タイプはタイトル・説明文それぞれ1組まで
+        brackets: { headline: 1, description: 1 },
+        // 絵文字はタイトルのみ2つまで
+        emoji: { headline: 2, description: 0, business_name: 0 },
+        dependentChars: "error",
+        halfKana: "error",
+        // ★♪→■ などはディスプレイ広告では使える記号
+        decorativeSymbols: null,
+        repeatedSymbols: "error",
         phone: "warn",
         allCaps: "info",
-        fullwidthAlnum: true,
+        fullwidthAlnum: false,
       },
     },
 
@@ -103,24 +170,32 @@ window.AD_RULES = {
       },
     },
 
-    line: {
-      label: { en: "LINE Ads", ja: "LINE広告" },
-      sub: { en: "Image / video", ja: "静止画・動画" },
-      countMode: "char",
+    microsoft: {
+      label: { en: "Microsoft Ads", ja: "Microsoft 広告" },
+      sub: { en: "Responsive search ads", ja: "レスポンシブ検索広告" },
+      countMode: "width",
       fields: [
-        { key: "headline", label: { en: "Title", ja: "タイトル" }, limit: 20 },
-        { key: "description", label: { en: "Description", ja: "ディスクリプション" }, limit: 75 },
+        // API の下限は3つ。手動入稿のヘルプでは5つ以上とされている
+        { key: "headline", label: { en: "Headlines", ja: "広告見出し" }, limit: 30, minItems: 3, maxItems: 15 },
+        { key: "description", label: { en: "Descriptions", ja: "説明文" }, limit: 90, minItems: 2, maxItems: 4 },
+        { key: "path", label: { en: "Display path", ja: "表示URLのパス" }, limit: 15, maxItems: 2 },
       ],
       checks: {
+        // 「！」「？」は1文につき1つまで（見出しの禁止はなし）。連続は repeatedSymbols で拾う
         exclamation: null,
-        emoji: "warn",
+        emoji: "error",
         dependentChars: "warn",
-        halfKana: "warn",
-        decorativeSymbols: "info",
-        repeatedSymbols: "warn",
+        // 日本向け広告では半角カナ不可
+        halfKana: "error",
+        // 装飾記号・矢印・ブロック要素などは見出し・説明文で使えない
+        decorativeSymbols: "error",
+        // 英数字以外の記号の連続は不可
+        repeatedSymbols: "error",
+        // 日本は電話番号の禁止国に含まれていない（米・加・英・香港・台湾のみ）
         phone: "info",
-        allCaps: "info",
-        fullwidthAlnum: false,
+        // 過度な大文字は不可
+        allCaps: "warn",
+        fullwidthAlnum: true,
       },
     },
   },
@@ -175,7 +250,7 @@ window.AD_RULES = {
     {
       category: { en: "Click bait", ja: "クリック誘導" },
       level: "error",
-      media: ["google_search", "google_display", "yahoo_search"],
+      media: ["google_search", "pmax", "demand_gen", "yahoo_search", "yda", "microsoft"],
       note: {
         en: "Phrases that just ask for a click aren't allowed. Describe the action instead (e.g. \"See details\").",
         ja: "クリックそのものを促す表現は使えません。「詳しくはこちら」など行動の中身を書いてください。",
@@ -201,7 +276,7 @@ window.AD_RULES = {
       "皮膚科医と共同開発。べたつかないのに、しっかり保湿。",
     ],
     path: ["美容液", "初回限定キャンペーン"],
-    short_headline: ["【公式】うるおいラボ", "絶対にうるおう美容液★"],
+    business_name: ["うるおいラボ"],
     long_headline: ["皮膚科医と共同開発した保湿美容液。今なら初回半額でお試しいただけます"],
     primary: [
       "乾燥が気になる季節に。皮膚科医と共同開発した保湿美容液で、朝までうるおいが続く肌へ。今なら初回半額、送料無料でお試しいただけます。定期縛りなし、いつでも解約OKです。",
